@@ -11,30 +11,48 @@ DB_PATH = "students.db"
 def init_db():
     conn = sqlite3.connect(DB_PATH)
     c = conn.cursor()
-    c.execute('''CREATE TABLE IF NOT EXISTS admin (
+
+    # Teacher table
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS teacher (
         id INTEGER PRIMARY KEY,
         username TEXT UNIQUE,
         password TEXT
-    )''')
-    c.execute('''CREATE TABLE IF NOT EXISTS students (
-        id INTEGER PRIMARY KEY,
-        name TEXT,
-        dob TEXT,
-        sclass TEXT,
-        fee_status TEXT
-    )''')
-    conn.commit()
-    conn.close()
-    create_default_admin()
+    );
+    ''')
 
-def create_default_admin():
-    conn = sqlite3.connect(DB_PATH)
-    c = conn.cursor()
-    c.execute("SELECT * FROM admin WHERE username=?", ("admin",))
+    # Students table
+    c.execute('''
+    CREATE TABLE IF NOT EXISTS students (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        sclass TEXT,
+        father TEXT,
+        mother TEXT,
+        aadhar TEXT,
+        dob TEXT,
+        phone TEXT,
+        whatsapp TEXT,
+        present INTEGER DEFAULT 0,
+        absent INTEGER DEFAULT 0,
+        created_at TEXT
+    );
+    ''')
+
+    # Ensure sclass column exists (fix for old DBs)
+    c.execute("PRAGMA table_info(students)")
+    cols = [col[1] for col in c.fetchall()]
+    if "sclass" not in cols:
+        c.execute("ALTER TABLE students ADD COLUMN sclass TEXT")
+
+    # Ensure teacher exists
+    c.execute("SELECT id FROM teacher WHERE username = ?", (TEACHER_USERNAME,))
     if not c.fetchone():
-        c.execute("INSERT INTO admin (username, password) VALUES (?, ?)", ("admin", "admin123"))
+        c.execute("INSERT INTO teacher (username, password) VALUES (?, ?)",
+                  (TEACHER_USERNAME, DEFAULT_TEACHER_PASSWORD))
     conn.commit()
     conn.close()
+
 
 # ---------------- Student CRUD ----------------
 def add_student(name, dob, sclass, fee_status):
@@ -198,3 +216,4 @@ init_db()
 login_ui()
 refresh_tree()
 root.mainloop()
+
