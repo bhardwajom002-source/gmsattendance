@@ -1,352 +1,246 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
-    <meta charset="UTF-8">
-    <title>Attendance System (Improved UI)</title>
-    <meta name="viewport" content="width=device-width, initial-scale=1">
+<meta charset="UTF-8">
+<title>Date-Wise Attendance System</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
 
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<!-- SheetJS -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 
-    <style>
-        body {
-            margin: 0;
-            padding: 0;
-            background: linear-gradient(135deg, #4CAF50, #2F8D46);
-            font-family: Arial, sans-serif;
-        }
+<!-- jsPDF -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 
-        /* ===== LOGIN BOX ===== */
-        .login-box {
-            width: 350px;
-            margin: 120px auto;
-            background: white;
-            padding: 30px;
-            border-radius: 15px;
-            box-shadow: 0px 0px 20px #0004;
-            animation: fadeIn 0.5s ease-in-out;
-        }
+<style>
+    body { font-family: Arial; background: #eef2f5; margin:0; padding:0; }
+    .box, .container {
+        width: 90%; max-width: 900px; margin: 40px auto;
+        background: white; padding: 25px;
+        border-radius: 12px; box-shadow: 0 0 10px #bbb;
+    }
+    h2 { text-align: center; }
 
-        @keyframes fadeIn {
-            from {
-                opacity: 0;
-                transform: scale(0.95);
-            }
+    input, button {
+        padding: 10px; margin:5px; border-radius:6px;
+        border:1px solid #aaa;
+    }
+    button {cursor:pointer; border:none; color:white;}
 
-            to {
-                opacity: 1;
-                transform: scale(1);
-            }
-        }
+    .btn-login{background:#28a745; width:100%;}
+    .btn-add{background:#28a745;}
+    .btn-present{background:#28a745;}
+    .btn-absent{background:#dc3545;}
+    .btn-edit{background:#007bff;}
+    .btn-delete{background:#dc3545;}
+    .btn-export{background:#444;}
+    .btn-logout{background:#dc3545; float:right;}
 
-        .login-box h2 {
-            text-align: center;
-            margin-bottom: 25px;
-            font-size: 24px;
-            color: #333;
-        }
+    table {width:100%; border-collapse:collapse; margin-top:15px;}
+    th {background:#37a835; color:white; padding:10px;}
+    td {padding:10px; border-bottom:1px solid #ddd;}
 
-        .login-input {
-            width: 100%;
-            padding: 12px;
-            margin: 8px 0;
-            border-radius: 8px;
-            border: 1px solid #aaa;
-            font-size: 15px;
-            transition: 0.3s;
-        }
-
-        .login-input:focus {
-            border-color: #4CAF50;
-            box-shadow: 0px 0px 5px #4CAF50;
-            outline: none;
-        }
-
-        .btn-login {
-            width: 100%;
-            padding: 12px;
-            margin-top: 10px;
-            background: #4CAF50;
-            color: white;
-            font-size: 16px;
-            border: none;
-            border-radius: 8px;
-            cursor: pointer;
-            transition: 0.3s;
-        }
-
-        .btn-login:hover {
-            background: #3e8e41;
-        }
-
-        /* ===== MAIN SYSTEM ===== */
-
-        .container {
-            width: 90%;
-            max-width: 1000px;
-            margin: 40px auto;
-            background: white;
-            padding: 20px 30px;
-            border-radius: 15px;
-            box-shadow: 0px 0px 20px #0004;
-            display: none;
-        }
-
-        h2 {
-            text-align: center;
-            margin-bottom: 20px;
-        }
-
-        input {
-            padding: 10px;
-            border: 1px solid #bbb;
-            border-radius: 6px;
-            margin: 5px;
-        }
-
-        button {
-            padding: 10px 15px;
-            border-radius: 6px;
-            color: white;
-            border: none;
-            cursor: pointer;
-            margin: 5px;
-        }
-
-        .btn-add {
-            background: #4CAF50;
-        }
-
-        .btn-present {
-            background: #4CAF50;
-        }
-
-        .btn-absent {
-            background: #e53935;
-        }
-
-        .btn-edit {
-            background: #1e88e5;
-        }
-
-        .btn-delete {
-            background: #e53935;
-        }
-
-        .btn-export {
-            background: #333;
-        }
-
-        .btn-logout {
-            background: #e53935;
-            float: right;
-        }
-
-        table {
-            width: 100%;
-            border-collapse: collapse;
-            margin-top: 15px;
-        }
-
-        th {
-            background: #4CAF50;
-            color: white;
-            padding: 10px;
-            font-size: 16px;
-        }
-
-        td {
-            padding: 10px;
-            border-bottom: 1px solid #ddd;
-            text-align: center;
-        }
-
-        .present {
-            color: green;
-            font-weight: bold;
-        }
-
-        .absent {
-            color: red;
-            font-weight: bold;
-        }
-    </style>
+    .present {color:green; font-weight:bold;}
+    .absent {color:red; font-weight:bold;}
+</style>
 </head>
 
 <body>
 
-    <!-- ===== LOGIN PAGE ===== -->
-    <div id="loginPage" class="login-box">
-        <h2>Login</h2>
+<!-- LOGIN PAGE -->
+<div id="loginPage" class="box">
+    <h2>Login</h2>
 
-        <input type="text" id="loginUser" class="login-input" placeholder="Enter Username">
-        <input type="password" id="loginPass" class="login-input" placeholder="Enter Password">
+    <input type="text" id="loginUser" placeholder="Enter Username">
+    <input type="password" id="loginPass" placeholder="Enter Password">
 
-        <button class="btn-login" onclick="login()">Login</button>
-    </div>
+    <button class="btn-login" onclick="login()">Login</button>
+</div>
 
-    <!-- ===== MAIN PAGE ===== -->
-    <div id="mainPage" class="container">
+<!-- MAIN PAGE -->
+<div id="mainPage" class="container" style="display:none;">
+    <button class="btn-logout" onclick="logout()">Logout</button>
+    <h2>Date-Wise Attendance System</h2>
 
-        <button class="btn-logout" onclick="logout()">Logout</button>
-        <h2>Attendance System</h2>
+    <input type="date" id="datePicker" onchange="loadAttendance()">
+    <br><br>
 
-        <input type="date" id="datePicker"><br><br>
+    <input type="text" id="studentName" placeholder="Student Name">
+    <input type="text" id="fatherName" placeholder="Father Name">
+    <button class="btn-add" onclick="addStudent()">Add Student</button>
 
-        <input type="text" id="studentName" placeholder="Student Name">
-        <input type="text" id="fatherName" placeholder="Father Name">
-        <button class="btn-add" onclick="addStudent()">Add Student</button>
+    <br><br>
 
-        <br><br>
-        <button class="btn-export" onclick="exportExcel()">Export Excel</button>
-        <button class="btn-export" onclick="exportPDF()">Export PDF</button>
+    <button class="btn-export" onclick="exportExcel()">Export Excel</button>
+    <button class="btn-export" onclick="exportPDF()">Export PDF</button>
 
-        <table>
-            <thead>
-                <tr>
-                    <th>Roll</th>
-                    <th>Name</th>
-                    <th>Father Name</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                </tr>
-            </thead>
-            <tbody id="attendanceBody"></tbody>
-        </table>
-    </div>
+    <table>
+        <thead>
+            <tr>
+                <th>Roll</th>
+                <th>Name</th>
+                <th>Father Name</th>
+                <th>Status</th>
+                <th>Actions</th>
+            </tr>
+        </thead>
+        <tbody id="attendanceBody"></tbody>
+    </table>
+</div>
 
-    <script>
-        /* ===== LOGIN SYSTEM ===== */
-        function login() {
-            let user = document.getElementById("loginUser").value.trim();
-            let pass = document.getElementById("loginPass").value.trim();
+<script>
+/* ---------------- LOGIN ---------------- */
+function login() {
+    let u = document.getElementById("loginUser").value.trim();
+    let p = document.getElementById("loginPass").value.trim();
 
-            if (user === "rekha" && pass === "rekha") {
-                document.getElementById("loginPage").style.display = "none";
-                document.getElementById("mainPage").style.display = "block";
-                localStorage.setItem("loggedIn", "true");
-            } else {
-                alert("Incorrect Username or Password!");
-            }
-        }
+    if (u === "rekha" && p === "rekha") {
+        localStorage.setItem("loggedIn", "true");
+        document.getElementById("loginPage").style.display = "none";
+        document.getElementById("mainPage").style.display = "block";
+    } else {
+        alert("Wrong Username or Password");
+    }
+}
 
-        function logout() {
-            localStorage.removeItem("loggedIn");
-            location.reload();
-        }
+function logout() {
+    localStorage.removeItem("loggedIn");
+    location.reload();
+}
 
-        if (localStorage.getItem("loggedIn") === "true") {
-            document.getElementById("loginPage").style.display = "none";
-            document.getElementById("mainPage").style.display = "block";
-        }
+if (localStorage.getItem("loggedIn") === "true") {
+    document.getElementById("loginPage").style.display = "none";
+    document.getElementById("mainPage").style.display = "block";
+}
 
-        /* ===== ATTENDANCE SYSTEM ===== */
-        let students = JSON.parse(localStorage.getItem("students")) || [];
-        const tableBody = document.getElementById("attendanceBody");
+/* ---------------- STUDENT & ATTENDANCE ---------------- */
 
-        document.getElementById("datePicker").value =
-            new Date().toISOString().substring(0, 10);
+let students = JSON.parse(localStorage.getItem("students")) || [];
+let attendance = JSON.parse(localStorage.getItem("attendance")) || {};  
+// attendance["2025-02-10"] = [{roll, status}]
 
-        function saveData() {
-            localStorage.setItem("students", JSON.stringify(students));
-        }
+const body = document.getElementById("attendanceBody");
 
-        function renderTable() {
-            tableBody.innerHTML = "";
-            students.forEach((stu, i) => {
-                tableBody.innerHTML += `
+document.getElementById("datePicker").value =
+    new Date().toISOString().substring(0, 10);
+
+function saveAll() {
+    localStorage.setItem("students", JSON.stringify(students));
+    localStorage.setItem("attendance", JSON.stringify(attendance));
+}
+
+function addStudent() {
+    let name = document.getElementById("studentName").value.trim();
+    let father = document.getElementById("fatherName").value.trim();
+
+    if (!name || !father) return alert("Enter both names!");
+
+    students.push({name, father});
+    saveAll();
+    loadAttendance();
+
+    document.getElementById("studentName").value = "";
+    document.getElementById("fatherName").value = "";
+}
+
+function loadAttendance() {
+    let date = document.getElementById("datePicker").value;
+
+    if (!attendance[date]) {
+        attendance[date] = students.map(() => ({status: "Not Marked"}));
+    }
+
+    body.innerHTML = "";
+
+    students.forEach((stu, i) => {
+        let s = attendance[date][i].status;
+
+        body.innerHTML += `
         <tr>
-            <td>${i + 1}</td>
+            <td>${i+1}</td>
             <td>${stu.name}</td>
             <td>${stu.father}</td>
             <td>
-                <span class="${stu.status === 'Present' ? 'present' : 'absent'}">
-                    ${stu.status}
-                </span><br>
-                <button class="btn-present" onclick="markPresent(${i})">Present</button>
-                <button class="btn-absent" onclick="markAbsent(${i})">Absent</button>
+                <span class="${s=='Present'?'present':'absent'}">${s}</span><br>
+                <button class="btn-present" onclick="mark(${i},'Present')">Present</button>
+                <button class="btn-absent" onclick="mark(${i},'Absent')">Absent</button>
             </td>
             <td>
                 <button class="btn-edit" onclick="editStudent(${i})">Edit</button>
                 <button class="btn-delete" onclick="deleteStudent(${i})">Delete</button>
             </td>
         </tr>`;
-            });
-        }
+    });
+}
 
-        function addStudent() {
-            let name = document.getElementById("studentName").value.trim();
-            let father = document.getElementById("fatherName").value.trim();
+function mark(i, type) {
+    let date = document.getElementById("datePicker").value;
+    attendance[date][i].status = type;
+    saveAll();
+    loadAttendance();
+}
 
-            if (!name || !father) return alert("Enter both name fields!");
+function editStudent(i) {
+    let name = prompt("Edit Name:", students[i].name);
+    let father = prompt("Edit Father Name:", students[i].father);
 
-            students.push({ name, father, status: "Not Marked" });
-            saveData();
-            renderTable();
+    if (name && father) {
+        students[i].name = name;
+        students[i].father = father;
+        saveAll();
+        loadAttendance();
+    }
+}
 
-            document.getElementById("studentName").value = "";
-            document.getElementById("fatherName").value = "";
-        }
+function deleteStudent(i) {
+    if (!confirm("Delete this student?")) return;
 
-        function markPresent(i) {
-            students[i].status = "Present";
-            saveData(); renderTable();
-        }
+    students.splice(i, 1);
 
-        function markAbsent(i) {
-            students[i].status = "Absent";
-            saveData(); renderTable();
-        }
+    for (let d in attendance) {
+        attendance[d].splice(i, 1);
+    }
 
-        function deleteStudent(i) {
-            if (confirm("Delete student?")) {
-                students.splice(i, 1);
-                saveData(); renderTable();
-            }
-        }
+    saveAll();
+    loadAttendance();
+}
 
-        function editStudent(i) {
-            let n = prompt("Edit Name:", students[i].name);
-            let f = prompt("Edit Father Name:", students[i].father);
-            if (n && f) {
-                students[i].name = n;
-                students[i].father = f;
-                saveData();
-                renderTable();
-            }
-        }
+/* ---------------- EXPORT ---------------- */
 
-        /* ===== EXPORT FUNCTIONS ===== */
-        function exportExcel() {
-            let sheetData = students.map((s, i) => ({
-                Roll: i + 1,
-                Name: s.name,
-                Father: s.father,
-                Status: s.status
-            }));
+function exportExcel() {
+    let date = document.getElementById("datePicker").value;
 
-            let wb = XLSX.utils.book_new();
-            let ws = XLSX.utils.json_to_sheet(sheetData);
-            XLSX.utils.book_append_sheet(wb, ws, "Attendance");
-            XLSX.writeFile(wb, "Attendance.xlsx");
-        }
+    let exportData = students.map((s, i) => ({
+        Roll: i+1,
+        Name: s.name,
+        Father_Name: s.father,
+        Status: attendance[date][i].status
+    }));
 
-        function exportPDF() {
-            const { jsPDF } = window.jspdf;
-            const doc = new jsPDF();
+    let wb = XLSX.utils.book_new();
+    let ws = XLSX.utils.json_to_sheet(exportData);
+    XLSX.utils.book_append_sheet(wb, ws, "Attendance");
+    XLSX.writeFile(wb, "Attendance_" + date + ".xlsx");
+}
 
-            doc.text("Student Attendance Report", 20, 20);
-            students.forEach((s, i) => {
-                doc.text(`${i + 1}. ${s.name} | Father: ${s.father} | ${s.status}`, 20, 40 + i * 10);
-            });
+function exportPDF() {
+    const { jsPDF } = window.jspdf;
+    let doc = new jsPDF();
+    let date = document.getElementById("datePicker").value;
 
-            doc.save("Attendance.pdf");
-        }
+    doc.text("Attendance Report - " + date, 20, 20);
 
-        renderTable();
-    </script>
+    students.forEach((s, i) => {
+        doc.text(
+            `${i+1}. ${s.name} (Father: ${s.father}) - ${attendance[date][i].status}`,
+            20, 40 + i*10
+        );
+    });
+
+    doc.save("Attendance_" + date + ".pdf");
+}
+
+loadAttendance();
+</script>
 
 </body>
-
 </html>
